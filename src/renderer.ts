@@ -120,20 +120,15 @@ const visit = (scene: core.Scene, basePath: string) => {
     content: [],
     images: {}
   };
-  let index = 0;
   let page = 1;
   const mapper = new Map<number, number>();
   const frames = (scene as any).frames as core.Frame[];
   const length = frames.length;
-  for (const frame of frames) {
-    mapper.set(index, page);
-    const pageBreak = runScripts(contents, frame.scripts, basePath);
-    index++;
-    if (index < length && pageBreak) {
-      contents.content.push({
-        text: "",
-        pageBreak: "after"
-      });
+  for (let i = 0; i < length; i++) {
+    mapper.set(i, page);
+    const pageBreak = runScripts(contents, frames[i].scripts, basePath);
+    if (i + 1 < length && pageBreak) {
+      contents.content[contents.content.length - 1].pageBreak = "after";
       page++;
     }
   }
