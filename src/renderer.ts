@@ -53,10 +53,16 @@ const createImage = (script: core.Image) => {
   return image;
 };
 
+const pushImageData = (contents: Contents, assetId: string, basePath: string, assets: Assets) => {
+  if (assetId in contents.images) {
+    const filePath = path.join(basePath, assets[assetId].path);
+    contents.images[assetId] = imageDataURL(filePath);
+  }
+};
+
 const pushImage = (contents: Contents, script: core.Image, basePath: string, assets: Assets) => {
-  const filePath = path.join(basePath, assets[script.assetId].path);
   contents.content.push(createImage(script));
-  contents.images[script.assetId] = imageDataURL(filePath);
+  pushImageData(contents, script.assetId, basePath, assets);
 };
 
 const pushChoice = (contents: Contents, script: core.Choice) => {
@@ -93,8 +99,7 @@ const pushButton = (contents: Contents, script: core.Button, basePath: string, a
   }
   button.linkToPage = frame;
   contents.content.push(button);
-  const filePath = path.join(basePath, assets[script.image.assetId].path);
-  contents.images[script.image.assetId] = imageDataURL(filePath);
+  pushImageData(contents, script.image.assetId, basePath, assets);
 };
 
 const runScripts = (contents: Contents, scripts: core.Script[], basePath: string, assets: Assets) => {
