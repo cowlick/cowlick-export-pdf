@@ -63,7 +63,7 @@ const pushChoice = (contents: Contents, script: core.Choice) => {
         linkToPage: v.frame,
         absolutePosition: {
           x: 380,
-          y: 730 + 50 * i
+          y: 730 + 40 * i
         }
       };
     } else {
