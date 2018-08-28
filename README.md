@@ -7,3 +7,7 @@
 ```bash
 npm i -S @cowlick/export-pdf
 ```
+
+## 謝辞
+
+PDF形式のアドベンチャーゲームを考えた[@rutan](https://github.com/rutan)さんに敬意を表します。
