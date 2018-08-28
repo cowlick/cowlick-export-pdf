@@ -9,6 +9,7 @@ const pdfFonts = require("../fonts/vfs_fonts");
 import * as fs from "fs";
 import * as path from "path";
 import * as core from "@cowlick/core";
+import {Assets} from "@akashic/akashic-cli-commons";
 
 interface Contents {
   content: any[];
@@ -31,15 +32,14 @@ const pushText = (contents: Contents, script: core.Text) => {
   });
 };
 
-const imageDataURL = (assetId: string, basePath: string) => {
-  const str = path.join(basePath, assetId);
-  const value = fs.readFileSync(str).toString("base64");
-  return `data:image/${path.extname(str).substring(1)};base64,${value}`;
+const imageDataURL = (filePath: string) => {
+  const value = fs.readFileSync(filePath).toString("base64");
+  return `data:image/${path.extname(filePath).substring(1)};base64,${value}`;
 };
 
-const createImage = (name: string, script: core.Image) => {
+const createImage = (script: core.Image) => {
   const image: any = {
-    image: name
+    image: script.assetId
   };
   if (script.layer.x !== undefined || script.layer.y !== undefined) {
     image.absolutePosition = {};
@@ -53,10 +53,10 @@ const createImage = (name: string, script: core.Image) => {
   return image;
 };
 
-const pushImage = (contents: Contents, script: core.Image, basePath: string) => {
-  const name = path.basename(script.assetId, path.extname(script.assetId));
-  contents.content.push(createImage(name, script));
-  contents.images[name] = imageDataURL(script.assetId, basePath);
+const pushImage = (contents: Contents, script: core.Image, basePath: string, assets: Assets) => {
+  const filePath = path.join(basePath, assets[script.assetId].path);
+  contents.content.push(createImage(script));
+  contents.images[script.assetId] = imageDataURL(filePath);
 };
 
 const pushChoice = (contents: Contents, script: core.Choice) => {
@@ -77,9 +77,8 @@ const pushChoice = (contents: Contents, script: core.Choice) => {
   }));
 };
 
-const pushButton = (contents: Contents, script: core.Button, basePath: string) => {
-  const name = path.basename(script.image.assetId, path.extname(script.image.assetId));
-  const button = createImage(name, script.image);
+const pushButton = (contents: Contents, script: core.Button, basePath: string, assets: Assets) => {
+  const button = createImage(script.image);
   button.absolutePosition = {
     x: script.x,
     y: script.y
@@ -94,10 +93,11 @@ const pushButton = (contents: Contents, script: core.Button, basePath: string) =
   }
   button.linkToPage = frame;
   contents.content.push(button);
-  contents.images[name] = imageDataURL(script.image.assetId, basePath);
+  const filePath = path.join(basePath, assets[script.image.assetId].path);
+  contents.images[script.image.assetId] = imageDataURL(filePath);
 };
 
-const runScripts = (contents: Contents, scripts: core.Script[], basePath: string) => {
+const runScripts = (contents: Contents, scripts: core.Script[], basePath: string, assets: Assets) => {
   let pageBreak = false;
   for (const script of scripts) {
     switch (script.tag) {
@@ -105,14 +105,14 @@ const runScripts = (contents: Contents, scripts: core.Script[], basePath: string
         pushText(contents, script);
         break;
       case core.Tag.image:
-        pushImage(contents, script, basePath);
+        pushImage(contents, script, basePath, assets);
         break;
       case core.Tag.choice:
         pushChoice(contents, script);
         pageBreak = true;
         break;
       case core.Tag.button:
-        pushButton(contents, script, basePath);
+        pushButton(contents, script, basePath, assets);
         pageBreak = true;
         break;
     }
@@ -120,7 +120,7 @@ const runScripts = (contents: Contents, scripts: core.Script[], basePath: string
   return pageBreak;
 };
 
-const visit = (scene: core.Scene, basePath: string) => {
+const visit = (scene: core.Scene, basePath: string, assets: Assets) => {
   const contents: Contents = {
     content: [],
     images: {}
@@ -131,7 +131,7 @@ const visit = (scene: core.Scene, basePath: string) => {
   const length = frames.length;
   for (let i = 0; i < length; i++) {
     mapper.set(i, page);
-    const pageBreak = runScripts(contents, frames[i].scripts, basePath);
+    const pageBreak = runScripts(contents, frames[i].scripts, basePath, assets);
     if (i + 1 < length && pageBreak) {
       contents.content[contents.content.length - 1].pageBreak = "after";
       page++;
@@ -145,9 +145,9 @@ const visit = (scene: core.Scene, basePath: string) => {
   return contents;
 };
 
-export const render = (scene: core.Scene, basePath: string) => {
+export const render = (scene: core.Scene, basePath: string, assets: Assets) => {
   return pdfMake.createPdf({
-    ...visit(scene, basePath),
+    ...visit(scene, basePath, assets),
     pageSize: "SRA3",
     pageOrientation: "landscape",
     defaultStyle: {
