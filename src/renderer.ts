@@ -1,5 +1,10 @@
 import * as pdfMake from "pdfmake/build/pdfmake";
-import * as pdfFonts from "pdfmake/build/vfs_fonts";
+const pdfFonts = require("../fonts/vfs_fonts");
+(pdfMake as any).fonts = {
+  LightNovelPOP: {
+      normal: "ラノベPOP.ttf"
+  }
+};
 (pdfMake as any).vfs = pdfFonts.pdfMake.vfs;
 import * as fs from "fs";
 import * as path from "path";
@@ -145,6 +150,9 @@ export const render = (scene: core.Scene, basePath: string) => {
     ...visit(scene, basePath),
     pageSize: "SRA3",
     pageOrientation: "landscape",
+    defaultStyle: {
+      font: "LightNovelPOP"
+    }
   } as any);
 };
 
