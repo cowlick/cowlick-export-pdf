@@ -54,7 +54,7 @@ const createImage = (script: core.Image) => {
 };
 
 const pushImageData = (contents: Contents, assetId: string, basePath: string, assets: Assets) => {
-  if (assetId in contents.images) {
+  if (assetId in contents.images === false) {
     const filePath = path.join(basePath, assets[assetId].path);
     contents.images[assetId] = imageDataURL(filePath);
   }
